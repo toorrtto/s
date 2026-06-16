@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOUL DASH - カード管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --fire:#e85d26;--fire-bg:#fff4ef;--fire-dark:#7a2a0a;--fire-border:#f0a07a;
+  --water:#1a7fd4;--water-bg:#eaf4fd;--water-dark:#042c53;--water-border:#7ab8ee;
+  --nature:#3b8c1a;--nature-bg:#eef6e4;--nature-dark:#173404;--nature-border:#8dc45a;
+  --darkness:#6b3fa0;--darkness-bg:#f0eefe;--darkness-dark:#26215c;--darkness-border:#a882d4;
+  --light:#b8860b;--light-bg:#fdf8e4;--light-dark:#412402;--light-border:#d4b44a;
+  --multi:#c0393b;--multi-bg:#fdeaea;--multi-dark:#5a0a0a;--multi-border:#e07878;
+  --zero:#5f5e5a;--zero-bg:#f1efe8;--zero-dark:#2c2c2a;--zero-border:#a0a09a;
+  --bg:#0d0f14;--surface:#161920;--surface2:#1e2230;--surface3:#262b3a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaf0;--text2:#8a90a8;--text3:#555d75;
+  --accent:#4a7cff;--accent-bg:rgba(74,124,255,0.12);
+  --red:#e85d5d;--red-bg:rgba(232,93,93,0.12);
+  --green:#3cb878;--green-bg:rgba(60,184,120,0.12);
+  --yellow:#f5c842;
+  --radius:10px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;font-size:14px;line-height:1.6;}
+h1,h2,h3,.logo-text{font-family:'Rajdhani','Noto Sans JP',sans-serif;}
+#app{min-height:100vh;}
+.hidden{display:none!important;}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:16px;}
+.spinner{width:36px;height:36px;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--accent);animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:12px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:flex;align-items:center;justify-content:center;padding:2rem;}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:360px;}
+.modal-box h3{font-size:16px;font-weight:500;margin-bottom:1.25rem;}
+.modal-btns{display:flex;gap:8px;margin-top:1rem;}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:radial-gradient(ellipse at 50% 0%,rgba(74,124,255,0.08) 0%,transparent 60%);}
+.login-wrap{width:100%;max-width:400px;}
+.login-logo{text-align:center;margin-bottom:2.5rem;}
+.logo-text{font-size:42px;font-weight:700;letter-spacing:6px;color:var(--text);text-transform:uppercase;}
+.logo-sub{font-size:11px;letter-spacing:4px;color:var(--text3);text-transform:uppercase;margin-top:4px;}
+.logo-line{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin:12px auto 0;}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;}
+.tab-row{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--surface2);border-radius:var(--radius);padding:4px;}
+.tab-btn{flex:1;padding:8px;border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer;border-radius:7px;font-family:'Noto Sans JP',sans-serif;transition:all 0.15s;}
+.tab-btn.active{background:var(--surface3);color:var(--text);font-weight:500;}
+.login-tabs{display:flex;gap:4px;margin-bottom:1.5rem;}
+.login-tab-btn{flex:1;padding:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer;border-radius:var(--radius);font-family:'Noto Sans JP',sans-serif;transition:all 0.15s;text-align:center;}
+.login-tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+.form-group{margin-bottom:1rem;}
+.form-group label{display:block;font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.form-group input{width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:10px 14px;font-size:14px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border 0.15s;}
+.form-group input:focus{border-color:var(--accent);}
+.form-group input::placeholder{color:var(--text3);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Noto Sans JP',sans-serif;transition:all 0.15s;white-space:nowrap;}
+.btn:hover{background:var(--surface3);}
+.btn-primary{background:var(--accent);border-color:transparent;color:#fff;font-weight:500;}
+.btn-primary:hover{background:#5a8cff;border-color:transparent;}
+.btn-danger{color:var(--red);border-color:rgba(232,93,93,0.3);}
+.btn-danger:hover{background:var(--red-bg);}
+.btn-yellow{background:rgba(245,200,66,0.15);border-color:rgba(245,200,66,0.4);color:var(--yellow);}
+.btn-yellow:hover{background:rgba(245,200,66,0.25);}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-full{width:100%;justify-content:center;}
+.msg{margin-top:12px;padding:10px 14px;border-radius:var(--radius);font-size:13px;display:none;}
+.msg.error{background:var(--red-bg);color:var(--red);border:1px solid rgba(232,93,93,0.2);display:block;}
+.msg.success{background:var(--green-bg);color:var(--green);border:1px solid rgba(60,184,120,0.2);display:block;}
+.login-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:12px;}
+.login-divider{text-align:center;color:var(--text3);font-size:11px;margin:1rem 0;position:relative;}
+.login-divider::before,.login-divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border2);}
+.login-divider::before{left:0;}.login-divider::after{right:0;}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+.topbar-brand{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;letter-spacing:4px;color:var(--text);}
+.topbar-brand span{color:var(--accent);}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.user-chip{background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--text2);}
+.admin-active-chip{background:rgba(245,200,66,0.15);border:1px solid rgba(245,200,66,0.4);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--yellow);letter-spacing:1px;}
+
+/* NAV */
+.main-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;}
+.nav-btn{padding:14px 18px;border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;border-bottom:2px solid transparent;transition:all 0.15s;margin-bottom:-1px;white-space:nowrap;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.nav-spacer{flex:1;}
+
+/* VIEWING BANNER */
+.viewing-banner{background:var(--accent-bg);border-bottom:1px solid rgba(74,124,255,0.2);padding:8px 1.5rem;font-size:12px;color:var(--accent);display:flex;align-items:center;justify-content:space-between;}
+
+/* CONTENT */
+.content{padding:1.5rem;max-width:1000px;margin:0 auto;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:1.5rem;}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;}
+.stat-box .s-label{font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.stat-box .s-val{font-size:26px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--text);}
+
+/* FILTER */
+.filter-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center;}
+.search-box{flex:1;min-width:180px;max-width:280px;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:8px 14px;font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border 0.15s;}
+.search-box:focus{border-color:var(--accent);}
+.search-box::placeholder{color:var(--text3);}
+.civ-pill{padding:5px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all 0.15s;}
+.civ-pill:hover{background:var(--surface2);}
+.civ-pill.active{font-weight:500;}
+.civ-pill[data-civ="all"].active{background:var(--surface3);color:var(--text);}
+.civ-pill[data-civ="火"].active{background:var(--fire-bg);color:var(--fire-dark);border-color:var(--fire-border);}
+.civ-pill[data-civ="水"].active{background:var(--water-bg);color:var(--water-dark);border-color:var(--water-border);}
+.civ-pill[data-civ="自然"].active{background:var(--nature-bg);color:var(--nature-dark);border-color:var(--nature-border);}
+.civ-pill[data-civ="闇"].active{background:var(--darkness-bg);color:var(--darkness-dark);border-color:var(--darkness-border);}
+.civ-pill[data-civ="光"].active{background:var(--light-bg);color:var(--light-dark);border-color:var(--light-border);}
+.civ-pill[data-civ="多色"].active{background:var(--multi-bg);color:var(--multi-dark);border-color:var(--multi-border);}
+.civ-pill[data-civ="無色"].active{background:var(--zero-bg);color:var(--zero-dark);border-color:var(--zero-border);}
+
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+.card-tile{border-radius:var(--radius);padding:12px 14px;border:1px solid;transition:transform 0.1s;}
+.card-tile:hover{transform:translateY(-1px);}
+.card-tile[data-civ="火"]{background:var(--fire-bg);border-color:var(--fire-border);}
+.card-tile[data-civ="水"]{background:var(--water-bg);border-color:var(--water-border);}
+.card-tile[data-civ="自然"]{background:var(--nature-bg);border-color:var(--nature-border);}
+.card-tile[data-civ="闇"]{background:var(--darkness-bg);border-color:var(--darkness-border);}
+.card-tile[data-civ="光"]{background:var(--light-bg);border-color:var(--light-border);}
+.card-tile[data-civ="多色"]{background:var(--multi-bg);border-color:var(--multi-border);}
+.card-tile[data-civ="無色"]{background:var(--zero-bg);border-color:var(--zero-border);}
+.card-tile-name{font-size:13px;font-weight:500;line-height:1.4;margin-bottom:8px;}
+.card-tile[data-civ="火"] .card-tile-name{color:var(--fire-dark);}
+.card-tile[data-civ="水"] .card-tile-name{color:var(--water-dark);}
+.card-tile[data-civ="自然"] .card-tile-name{color:var(--nature-dark);}
+.card-tile[data-civ="闇"] .card-tile-name{color:var(--darkness-dark);}
+.card-tile[data-civ="光"] .card-tile-name{color:var(--light-dark);}
+.card-tile[data-civ="多色"] .card-tile-name{color:var(--multi-dark);}
+.card-tile[data-civ="無色"] .card-tile-name{color:var(--zero-dark);}
+.card-tile-meta{display:flex;align-items:center;justify-content:space-between;}
+.card-cost-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(0,0,0,0.07);}
+.card-tile[data-civ="火"] .card-cost-badge{color:var(--fire);}
+.card-tile[data-civ="水"] .card-cost-badge{color:var(--water);}
+.card-tile[data-civ="自然"] .card-cost-badge{color:var(--nature);}
+.card-tile[data-civ="闇"] .card-cost-badge{color:var(--darkness);}
+.card-tile[data-civ="光"] .card-cost-badge{color:var(--light);}
+.card-tile[data-civ="多色"] .card-cost-badge{color:var(--multi);}
+.card-tile[data-civ="無色"] .card-cost-badge{color:var(--zero);}
+.card-count-ctrl{display:flex;align-items:center;gap:4px;}
+.count-btn{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,0.15);background:rgba(0,0,0,0.06);color:#333;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.1s;font-family:monospace;line-height:1;}
+.count-btn:hover{background:rgba(0,0,0,0.16);}
+.count-btn.minus{display:none;}
+.admin-mode .count-btn.minus{display:flex;}
+.card-count-num{font-size:13px;font-weight:700;min-width:20px;text-align:center;}
+.card-tile[data-civ="火"] .card-count-num{color:var(--fire-dark);}
+.card-tile[data-civ="水"] .card-count-num{color:var(--water-dark);}
+.card-tile[data-civ="自然"] .card-count-num{color:var(--nature-dark);}
+.card-tile[data-civ="闇"] .card-count-num{color:var(--darkness-dark);}
+.card-tile[data-civ="光"] .card-count-num{color:var(--light-dark);}
+.card-tile[data-civ="多色"] .card-count-num{color:var(--multi-dark);}
+.card-tile[data-civ="無色"] .card-count-num{color:var(--zero-dark);}
+.empty-state{grid-column:1/-1;text-align:center;padding:3rem;color:var(--text3);font-size:14px;}
+
+/* ADD */
+.add-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.section-head h2{font-size:16px;font-weight:500;}
+.col-labels{display:grid;grid-template-columns:1fr 110px 80px 36px;gap:8px;padding:0 0 6px;}
+.col-labels span{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+.entry-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem;}
+.entry-row{display:grid;grid-template-columns:1fr 110px 80px 36px;gap:8px;align-items:center;}
+.entry-row input,.entry-row select{background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:9px 12px;font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border 0.15s;width:100%;}
+.entry-row input:focus,.entry-row select:focus{border-color:var(--accent);}
+.entry-row input::placeholder{color:var(--text3);}
+.entry-row select option{background:#1e2230;}
+.del-row-btn{width:36px;height:36px;border-radius:var(--radius);border:1px solid rgba(232,93,93,0.3);background:transparent;color:var(--red);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background 0.15s;}
+.del-row-btn:hover{background:var(--red-bg);}
+.add-footer{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* MEMBERS */
+.members-grid{display:flex;flex-direction:column;gap:10px;}
+.member-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.member-left{display:flex;align-items:center;gap:14px;}
+.member-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;flex-shrink:0;}
+.member-name{font-size:14px;font-weight:500;}
+.member-stats{font-size:12px;color:var(--text2);margin-top:2px;}
+.member-actions{display:flex;gap:8px;flex-shrink:0;}
+
+/* ANALYTICS */
+.analytics-section{display:flex;flex-direction:column;gap:1.5rem;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;}
+.chart-card h2{font-size:15px;font-weight:500;margin-bottom:1.25rem;color:var(--text);}
+.chart-wrap{position:relative;width:100%;}
+.chart-wrap canvas{max-height:340px;}
+
+@media(max-width:600px){
+  .cards-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}
+  .entry-row{grid-template-columns:1fr 90px 60px 36px;}
+  .col-labels{grid-template-columns:1fr 90px 60px 36px;}
+  .stats-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));}
+  .topbar-right .user-chip{display:none;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">接続中</div>
+</div>
+
+<!-- ADMIN AUTH MODAL -->
+<div class="modal-overlay hidden" id="admin-modal">
+  <div class="modal-box">
+    <h3>🔐 管理者認証</h3>
+    <div class="form-group">
+      <label>管理者パスワード</label>
+      <input type="password" id="admin-pass-input" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')verifyAdmin()"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="verifyAdmin()">認証</button>
+      <button class="btn" onclick="closeAdminModal()">キャンセル</button>
+    </div>
+    <div class="msg" id="admin-modal-msg"></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:radial-gradient(ellipse at 50% 0%,rgba(74,124,255,0.08) 0%,transparent 60%);">
+  <div style="width:100%;max-width:400px;">
+    <div style="text-align:center;margin-bottom:2.5rem;">
+      <div class="logo-text">SOUL DASH</div>
+      <div class="logo-sub">Card Manager</div>
+      <div class="logo-line"></div>
+    </div>
+    <div class="login-card">
+      <div class="login-tabs">
+        <button class="login-tab-btn active" id="lt-login" onclick="switchLoginTab('login')">ログイン</button>
+        <button class="login-tab-btn" id="lt-register" onclick="switchLoginTab('register')">新規登録</button>
+        <button class="login-tab-btn" id="lt-admin" onclick="switchLoginTab('admin')">🔐 管理者</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="form-login">
+        <div class="form-group"><label>プレイヤー名</label><input type="text" id="login-name" placeholder="名前を入力"/></div>
+        <div class="form-group"><label>パスワード</label><input type="password" id="login-pass" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <button class="btn btn-primary btn-full" onclick="doLogin()">ログイン</button>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="form-register" class="hidden">
+        <div class="form-group"><label>プレイヤー名</label><input type="text" id="reg-name" placeholder="名前を入力"/></div>
+        <div class="form-group"><label>パスワード（4文字以上）</label><input type="password" id="reg-pass" placeholder="パスワード" onkeydown="if(event.key==='Enter')doRegister()"/></div>
+        <button class="btn btn-primary btn-full" onclick="doRegister()">登録してログイン</button>
+      </div>
+
+      <!-- ADMIN LOGIN FORM -->
+      <div id="form-admin" class="hidden">
+        <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.25);border-radius:var(--radius);padding:12px 14px;margin-bottom:1rem;font-size:12px;color:var(--yellow);">
+          管理者としてログインします。グラフ・分析・全メンバーのカード枚数操作が可能です。
+        </div>
+        <div class="form-group"><label>管理者パスワード</label><input type="password" id="admin-login-pass" placeholder="管理者パスワード" onkeydown="if(event.key==='Enter')doAdminLogin()"/></div>
+        <button class="btn btn-yellow btn-full" onclick="doAdminLogin()">🔐 管理者としてログイン</button>
+      </div>
+
+      <div class="msg" id="login-msg"></div>
+      <div class="login-hint" id="login-hint">通常ログイン: 名前＋パスワード</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main-screen" class="hidden">
+  <div class="topbar">
+    <div class="topbar-brand">SOUL<span>.</span>DASH</div>
+    <div class="topbar-right">
+      <div class="admin-active-chip hidden" id="admin-active-chip">🔓 管理者モード</div>
+      <div class="user-chip" id="user-chip"></div>
+      <button class="btn btn-sm" onclick="doLogout()">ログアウト</button>
+    </div>
+  </div>
+
+  <div class="viewing-banner hidden" id="viewing-banner">
+    <span id="viewing-text"></span>
+    <button class="btn btn-sm" onclick="stopViewing()">自分のカードに戻る</button>
+  </div>
+
+  <nav class="main-nav" id="main-nav">
+    <button class="nav-btn active" id="nav-cards" onclick="switchTab('cards')">カード一覧</button>
+    <button class="nav-btn" id="nav-add" onclick="switchTab('add')">カードを追加</button>
+    <button class="nav-btn hidden" id="nav-members" onclick="switchTab('members')">メンバー管理</button>
+    <button class="nav-btn hidden" id="nav-analytics" onclick="switchTab('analytics')">📊 分析</button>
+    <div class="nav-spacer"></div>
+    <button class="nav-btn" id="nav-adminmode" onclick="toggleAdminMode()">🔐 管理者モード</button>
+  </nav>
+
+  <div class="content">
+    <!-- CARDS TAB -->
+    <div id="tab-cards">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="filter-row">
+        <input class="search-box" id="search-input" placeholder="🔍 カード名で検索..." oninput="renderCards()"/>
+        <button class="civ-pill active" data-civ="all" onclick="setCiv('all')">すべて</button>
+        <button class="civ-pill" data-civ="火" onclick="setCiv('火')">🔥 火</button>
+        <button class="civ-pill" data-civ="水" onclick="setCiv('水')">💧 水</button>
+        <button class="civ-pill" data-civ="自然" onclick="setCiv('自然')">🌿 自然</button>
+        <button class="civ-pill" data-civ="闇" onclick="setCiv('闇')">🌑 闇</button>
+        <button class="civ-pill" data-civ="光" onclick="setCiv('光')">✨ 光</button>
+        <button class="civ-pill" data-civ="多色" onclick="setCiv('多色')">🌈 多色</button>
+        <button class="civ-pill" data-civ="無色" onclick="setCiv('無色')">⬜ 無色</button>
+      </div>
+      <div class="cards-grid" id="cards-grid"></div>
+    </div>
+
+    <!-- ADD TAB -->
+    <div id="tab-add" class="hidden">
+      <div class="add-section">
+        <div class="section-head">
+          <h2>カードを追加</h2>
+          <button class="btn btn-sm" onclick="addEntryRow()">＋ 行を追加</button>
+        </div>
+        <div class="col-labels">
+          <span>カード名</span><span>文明</span><span>コスト</span><span></span>
+        </div>
+        <div class="entry-rows" id="entry-rows"></div>
+        <div class="add-footer">
+          <button class="btn btn-primary" onclick="submitCards()">✓ まとめて追加</button>
+        </div>
+        <div class="msg" id="add-msg"></div>
+      </div>
+    </div>
+
+    <!-- MEMBERS TAB -->
+    <div id="tab-members" class="hidden">
+      <div class="members-grid" id="members-grid"></div>
+    </div>
+
+    <!-- ANALYTICS TAB -->
+    <div id="tab-analytics" class="hidden">
+      <div class="analytics-section">
+        <div class="chart-card">
+          <h2>📊 メンバー別カード所持数</h2>
+          <div class="chart-wrap"><canvas id="chart-members"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h2>📈 カード増減履歴</h2>
+          <div class="chart-wrap"><canvas id="chart-history"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, deleteDoc, arrayUnion, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBaaVZyIJWXMSKWrrS3TOvaUuS1pXPYsjk",
+  authDomain: "soul-13b85.firebaseapp.com",
+  projectId: "soul-13b85",
+  storageBucket: "soul-13b85.firebasestorage.app",
+  messagingSenderId: "210924909510",
+  appId: "1:210924909510:web:11845b050a6b3b2be278c7"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+const CIVS = ['火','水','自然','闇','光','多色','無色'];
+const ADMIN_PASS = '20100820';
+const AVATAR_COLORS = ['#4a7cff','#e85d26','#3b8c1a','#6b3fa0','#b8860b','#c0393b','#1a7fd4'];
+const CIV_CHART_COLORS = {'火':'#e85d26','水':'#1a7fd4','自然':'#3b8c1a','闇':'#6b3fa0','光':'#b8860b','多色':'#c0393b','無色':'#5f5e5a'};
+
+let currentUser = null;
+let isAdminUser = false; // logged in as admin account
+let adminModeActive = false; // admin mode toggle (for count editing)
+let viewingUser = null;
+let civFilter = 'all';
+let entryCount = 0;
+let allUsers = {};
+let chartMembers = null;
+let chartHistory = null;
+
+// ===== UTILS =====
+function showLoading(v){ document.getElementById('loading').classList.toggle('hidden',!v); }
+function showMsg(id,text,type){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=text; el.className='msg '+type;
+  if(type==='success') setTimeout(()=>{ el.className='msg'; },3000);
+}
+function getCards(){ return allUsers[viewingUser||currentUser]?.cards||[]; }
+function isEffectiveAdmin(){ return isAdminUser||adminModeActive; }
+
+// ===== LOGIN TABS =====
+window.switchLoginTab = function(t){
+  ['login','register','admin'].forEach(id=>{
+    document.getElementById('form-'+id).classList.toggle('hidden',id!==t);
+    document.getElementById('lt-'+id).classList.toggle('active',id===t);
+  });
+  const hints = {login:'通常ログイン: 名前＋パスワード', register:'新規登録: 名前＋パスワード（4文字以上）', admin:'管理者専用ログイン'};
+  document.getElementById('login-hint').textContent = hints[t]||'';
+  document.getElementById('login-msg').className='msg';
+};
+
+// ===== AUTH =====
+window.doLogin = async function(){
+  const name=document.getElementById('login-name').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!name||!pass) return showMsg('login-msg','名前とパスワードを入力してください','error');
+  showLoading(true);
+  try{
+    const snap=await getDoc(doc(db,'users',name));
+    if(!snap.exists()){ showLoading(false); return showMsg('login-msg','ユーザーが見つかりません','error'); }
+    const data=snap.data();
+    if(data.pass!==pass){ showLoading(false); return showMsg('login-msg','パスワードが違います','error'); }
+    currentUser=name; isAdminUser=data.isAdmin||false; adminModeActive=false;
+    await loadAllUsers();
+    enterMain();
+  }catch(e){ showLoading(false); showMsg('login-msg','接続エラーが発生しました','error'); console.error(e); }
+};
+
+window.doRegister = async function(){
+  const name=document.getElementById('reg-name').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  if(!name) return showMsg('login-msg','名前を入力してください','error');
+  if(pass.length<4) return showMsg('login-msg','パスワードは4文字以上で入力してください','error');
+  showLoading(true);
+  try{
+    const snap=await getDoc(doc(db,'users',name));
+    if(snap.exists()){ showLoading(false); return showMsg('login-msg','その名前はすでに使われています','error'); }
+    await setDoc(doc(db,'users',name),{pass,isAdmin:false,cards:[],history:[]});
+    currentUser=name; isAdminUser=false; adminModeActive=false;
+    await loadAllUsers();
+    enterMain();
+  }catch(e){ showLoading(false); showMsg('login-msg','接続エラーが発生しました','error'); console.error(e); }
+};
+
+window.doAdminLogin = async function(){
+  const pass=document.getElementById('admin-login-pass').value;
+  if(pass!==ADMIN_PASS) return showMsg('login-msg','管理者パスワードが違います','error');
+  showLoading(true);
+  try{
+    // ensure admin account exists
+    const snap=await getDoc(doc(db,'users','admin'));
+    if(!snap.exists()){
+      await setDoc(doc(db,'users','admin'),{pass:'admin',isAdmin:true,cards:[],history:[]});
+    }
+    currentUser='admin'; isAdminUser=true; adminModeActive=true;
+    await loadAllUsers();
+    enterMain();
+  }catch(e){ showLoading(false); showMsg('login-msg','接続エラーが発生しました','error'); console.error(e); }
+};
+
+window.doLogout = function(){
+  currentUser=null; isAdminUser=false; adminModeActive=false;
+  viewingUser=null; civFilter='all'; allUsers={};
+  document.getElementById('main-screen').classList.add('hidden');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-name').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-msg').className='msg';
+  document.getElementById('entry-rows').innerHTML='';
+  entryCount=0;
+  switchLoginTab('login');
+  if(chartMembers){ chartMembers.destroy(); chartMembers=null; }
+  if(chartHistory){ chartHistory.destroy(); chartHistory=null; }
+};
+
+async function loadAllUsers(){
+  const snap=await getDocs(collection(db,'users'));
+  allUsers={};
+  snap.forEach(d=>{ allUsers[d.id]=d.data(); });
+}
+
+function enterMain(){
+  showLoading(false);
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-screen').classList.remove('hidden');
+  document.getElementById('user-chip').textContent=currentUser;
+  // show/hide admin tabs
+  const showAdmin = isAdminUser||adminModeActive;
+  ['nav-members','nav-analytics'].forEach(id=>{
+    document.getElementById(id).classList.toggle('hidden',!showAdmin);
+  });
+  updateAdminChip();
+  if(document.getElementById('entry-rows').children.length===0) addEntryRow();
+  switchTab('cards');
+}
+
+function updateAdminChip(){
+  const chip=document.getElementById('admin-active-chip');
+  chip.classList.toggle('hidden',!adminModeActive&&!isAdminUser);
+  const navBtn=document.getElementById('nav-adminmode');
+  if(adminModeActive||isAdminUser){
+    navBtn.classList.add('active');
+    navBtn.textContent='🔓 管理者モード解除';
+  } else {
+    navBtn.classList.remove('active');
+    navBtn.textContent='🔐 管理者モード';
+  }
+}
+
+// ===== ADMIN MODE TOGGLE =====
+window.toggleAdminMode = function(){
+  if(isAdminUser){
+    // admin user can toggle freely without re-auth
+    adminModeActive=!adminModeActive;
+    updateAdminChip();
+    renderCards();
+    return;
+  }
+  if(adminModeActive){
+    adminModeActive=false;
+    updateAdminChip();
+    renderCards();
+  } else {
+    openAdminModal();
+  }
+};
+
+window.openAdminModal = function(){
+  document.getElementById('admin-modal').classList.remove('hidden');
+  document.getElementById('admin-pass-input').value='';
+  document.getElementById('admin-modal-msg').className='msg';
+  setTimeout(()=>document.getElementById('admin-pass-input').focus(),50);
+};
+window.closeAdminModal = function(){
+  document.getElementById('admin-modal').classList.add('hidden');
+};
+window.verifyAdmin = function(){
+  const pass=document.getElementById('admin-pass-input').value;
+  if(pass===ADMIN_PASS){
+    adminModeActive=true;
+    closeAdminModal();
+    // show analytics/members tabs
+    document.getElementById('nav-members').classList.remove('hidden');
+    document.getElementById('nav-analytics').classList.remove('hidden');
+    updateAdminChip();
+    renderCards();
+  } else {
+    showMsg('admin-modal-msg','パスワードが違います','error');
+  }
+};
+
+// ===== TABS =====
+window.switchTab = function(t){
+  ['cards','add','members','analytics'].forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('hidden',id!==t);
+    const nav=document.getElementById('nav-'+id);
+    if(nav) nav.classList.toggle('active',id===t);
+  });
+  if(t==='cards') renderCards();
+  if(t==='members') renderMembers();
+  if(t==='analytics') renderAnalytics();
+};
+
+// ===== CIV FILTER =====
+window.setCiv = function(civ){
+  civFilter=civ;
+  document.querySelectorAll('.civ-pill').forEach(b=>b.classList.toggle('active',b.dataset.civ===civ));
+  renderCards();
+};
+
+// ===== RENDER CARDS =====
+window.renderCards = function(){
+  const cards=getCards();
+  const search=(document.getElementById('search-input')?.value||'').toLowerCase();
+  const byCiv={};
+  CIVS.forEach(c=>byCiv[c]=0);
+  cards.forEach(c=>{ byCiv[c.civ]=(byCiv[c.civ]||0)+c.count; });
+  const total=cards.reduce((s,c)=>s+c.count,0);
+
+  document.getElementById('stats-grid').innerHTML=
+    `<div class="stat-box"><div class="s-label">総枚数</div><div class="s-val">${total}</div></div>
+     <div class="stat-box"><div class="s-label">種類数</div><div class="s-val">${cards.length}</div></div>`+
+    CIVS.filter(c=>byCiv[c]>0).map(c=>`
+     <div class="stat-box" style="border-left:3px solid ${CIV_CHART_COLORS[c]}">
+       <div class="s-label">${c}</div>
+       <div class="s-val" style="color:${CIV_CHART_COLORS[c]}">${byCiv[c]}</div>
+     </div>`).join('');
+
+  let filtered=cards;
+  if(civFilter!=='all') filtered=filtered.filter(c=>c.civ===civFilter);
+  if(search) filtered=filtered.filter(c=>c.name.toLowerCase().includes(search));
+
+  const grid=document.getElementById('cards-grid');
+  if(filtered.length===0){
+    grid.innerHTML='<div class="empty-state">カードがありません</div>';
+    grid.className='cards-grid';
+    return;
+  }
+  const canEdit=(adminModeActive||isAdminUser)&&!viewingUser;
+  grid.className='cards-grid'+(canEdit?' admin-mode':'');
+  grid.innerHTML=filtered.map(c=>`
+    <div class="card-tile" data-civ="${c.civ}">
+      <div class="card-tile-name">${c.name}</div>
+      <div class="card-tile-meta">
+        <span class="card-cost-badge">コスト ${c.cost}</span>
+        <div class="card-count-ctrl">
+          <button class="count-btn minus" onclick="changeCount('${c.name.replace(/'/g,"\\'")}',false)">−</button>
+          <span class="card-count-num">×${c.count}</span>
+          <button class="count-btn plus" onclick="changeCount('${c.name.replace(/'/g,"\\'")}',true)">＋</button>
+        </div>
+      </div>
+    </div>`).join('');
+};
+
+// ===== COUNT CHANGE =====
+window.changeCount = async function(name, increase){
+  const u=viewingUser||currentUser;
+  const cards=[...(allUsers[u]?.cards||[])];
+  const idx=cards.findIndex(c=>c.name===name);
+  if(idx===-1) return;
+
+  const delta=increase?1:-1;
+  cards[idx]=Object.assign({},cards[idx]);
+  cards[idx].count+=delta;
+
+  // record history
+  const histEntry={
+    ts: Date.now(),
+    user: u,
+    card: name,
+    delta
+  };
+
+  let history=[...(allUsers[u]?.history||[])];
+  history.push(histEntry);
+  // keep last 200 entries
+  if(history.length>200) history=history.slice(-200);
+
+  if(cards[idx].count<=0) cards.splice(idx,1);
+
+  allUsers[u].cards=cards;
+  allUsers[u].history=history;
+  try{
+    await updateDoc(doc(db,'users',u),{cards,history});
+    renderCards();
+  }catch(e){ console.error(e); }
+};
+
+// ===== ADD CARDS =====
+window.addEntryRow = function(){
+  entryCount++;
+  const id='row-'+entryCount;
+  const div=document.createElement('div');
+  div.className='entry-row'; div.id=id;
+  div.innerHTML=`
+    <input type="text" class="e-name" placeholder="カード名を入力"/>
+    <select class="e-civ">${CIVS.map(c=>`<option>${c}</option>`).join('')}</select>
+    <input type="number" class="e-cost" min="1" max="99" value="3"/>
+    <button class="del-row-btn" onclick="delRow('${id}')">×</button>`;
+  document.getElementById('entry-rows').appendChild(div);
+};
+
+window.delRow = function(id){
+  const rows=document.getElementById('entry-rows');
+  if(rows.children.length>1) document.getElementById(id)?.remove();
+};
+
+window.submitCards = async function(){
+  const rows=document.querySelectorAll('.entry-row');
+  const toAdd=[]; let err=false;
+  rows.forEach(r=>{
+    const name=r.querySelector('.e-name').value.trim();
+    const civ=r.querySelector('.e-civ').value;
+    const cost=parseInt(r.querySelector('.e-cost').value)||1;
+    if(!name){err=true;return;}
+    toAdd.push({name,civ,cost});
+  });
+  if(err) return showMsg('add-msg','カード名が入力されていない行があります','error');
+  if(toAdd.length===0) return showMsg('add-msg','追加するカードがありません','error');
+
+  const cards=[...(allUsers[currentUser]?.cards||[])];
+  const history=[...(allUsers[currentUser]?.history||[])];
+  const now=Date.now();
+
+  toAdd.forEach(({name,civ,cost})=>{
+    const ex=cards.find(c=>c.name===name);
+    if(ex) ex.count++;
+    else cards.push({name,civ,cost,count:1});
+    history.push({ts:now,user:currentUser,card:name,delta:1});
+  });
+
+  try{
+    await updateDoc(doc(db,'users',currentUser),{cards,history});
+    allUsers[currentUser].cards=cards;
+    allUsers[currentUser].history=history;
+    showMsg('add-msg',`${toAdd.length}枚のカードを追加しました！`,'success');
+    document.getElementById('entry-rows').innerHTML='';
+    entryCount=0; addEntryRow();
+    renderCards();
+  }catch(e){ showMsg('add-msg','保存エラーが発生しました','error'); console.error(e); }
+};
+
+// ===== MEMBERS =====
+window.renderMembers = function(){
+  const users=Object.entries(allUsers);
+  document.getElementById('members-grid').innerHTML=users.map(([name,u],i)=>{
+    const total=(u.cards||[]).reduce((s,c)=>s+c.count,0);
+    const initials=name.slice(0,2).toUpperCase();
+    const color=AVATAR_COLORS[i%AVATAR_COLORS.length];
+    const isMe=name===currentUser;
+    return `<div class="member-card">
+      <div class="member-left">
+        <div class="member-avatar" style="background:${color}22;color:${color}">${initials}</div>
+        <div>
+          <div class="member-name">${name}${isMe?' <span style="font-size:11px;color:var(--text3)">(自分)</span>':''}${u.isAdmin?' <span style="font-size:11px;color:var(--accent)">ADMIN</span>':''}</div>
+          <div class="member-stats">${(u.cards||[]).length}種 / ${total}枚</div>
+        </div>
+      </div>
+      <div class="member-actions">
+        ${!isMe?`<button class="btn btn-sm" onclick="viewUser('${name}')">カードを見る</button>`:''}
+        ${!u.isAdmin?`<button class="btn btn-sm btn-danger" onclick="deleteUser('${name}')">削除</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+};
+
+window.viewUser = function(name){
+  viewingUser=name; civFilter='all';
+  document.querySelectorAll('.civ-pill').forEach(b=>b.classList.toggle('active',b.dataset.civ==='all'));
+  document.getElementById('search-input').value='';
+  document.getElementById('viewing-banner').classList.remove('hidden');
+  document.getElementById('viewing-text').textContent=`📋 ${name} のカードを表示中`;
+  switchTab('cards');
+};
+
+window.stopViewing = function(){
+  viewingUser=null;
+  document.getElementById('viewing-banner').classList.add('hidden');
+  renderCards();
+};
+
+window.deleteUser = async function(name){
+  if(!confirm(`「${name}」を削除しますか？`)) return;
+  try{
+    await deleteDoc(doc(db,'users',name));
+    delete allUsers[name];
+    renderMembers();
+  }catch(e){ console.error(e); }
+};
+
+// ===== ANALYTICS =====
+window.renderAnalytics = function(){
+  // --- Bar chart: members card count ---
+  const users=Object.entries(allUsers).filter(([n])=>n!=='admin');
+  const labels=users.map(([n])=>n);
+  const totals=users.map(([,u])=>(u.cards||[]).reduce((s,c)=>s+c.count,0));
+  const kinds=users.map(([,u])=>(u.cards||[]).length);
+  const barColors=labels.map((_,i)=>AVATAR_COLORS[i%AVATAR_COLORS.length]);
+
+  const ctxM=document.getElementById('chart-members').getContext('2d');
+  if(chartMembers) chartMembers.destroy();
+  chartMembers=new Chart(ctxM,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'総枚数',data:totals,backgroundColor:barColors.map(c=>c+'cc'),borderColor:barColors,borderWidth:2,borderRadius:6},
+        {label:'種類数',data:kinds,backgroundColor:barColors.map(c=>c+'55'),borderColor:barColors,borderWidth:1,borderRadius:6,borderDash:[]}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{labels:{color:'#8a90a8',font:{size:12}}},
+        tooltip:{backgroundColor:'#1e2230',titleColor:'#e8eaf0',bodyColor:'#8a90a8',borderColor:'rgba(255,255,255,0.12)',borderWidth:1}
+      },
+      scales:{
+        x:{ticks:{color:'#8a90a8'},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#8a90a8'},grid:{color:'rgba(255,255,255,0.05)'},beginAtZero:true}
+      }
+    }
+  });
+
+  // --- Line chart: card change history ---
+  // collect all history entries from all users, sorted by time
+  let allHistory=[];
+  Object.entries(allUsers).forEach(([uname,u])=>{
+    (u.history||[]).forEach(h=>allHistory.push({...h,user:uname}));
+  });
+  allHistory.sort((a,b)=>a.ts-b.ts);
+
+  // build per-user cumulative datasets
+  const userNames=[...new Set(allHistory.map(h=>h.user))].filter(n=>n!=='admin');
+  const timePoints=[...new Set(allHistory.map(h=>{
+    const d=new Date(h.ts);
+    return d.toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  }))];
+
+  // running total per user at each time point
+  const userTotals={};
+  userNames.forEach(n=>userTotals[n]=0);
+
+  const pointsMap={}; // ts_label -> {user: cumcount}
+  allHistory.forEach(h=>{
+    if(!userTotals[h.user]&&userTotals[h.user]!==0) return;
+    userTotals[h.user]=(userTotals[h.user]||0)+h.delta;
+    const label=new Date(h.ts).toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    if(!pointsMap[label]) pointsMap[label]={};
+    userNames.forEach(n=>{ pointsMap[label][n]=userTotals[n]; });
+  });
+
+  const chartLabels=Object.keys(pointsMap);
+  const lineDatasets=userNames.map((uname,i)=>{
+    const color=AVATAR_COLORS[i%AVATAR_COLORS.length];
+    return {
+      label:uname,
+      data:chartLabels.map(l=>pointsMap[l][uname]||0),
+      borderColor:color,
+      backgroundColor:color+'22',
+      borderWidth:2,
+      tension:0.3,
+      fill:false,
+      pointRadius:4,
+      pointHoverRadius:6
+    };
+  });
+
+  const ctxH=document.getElementById('chart-history').getContext('2d');
+  if(chartHistory) chartHistory.destroy();
+
+  if(chartLabels.length===0){
+    ctxH.clearRect(0,0,ctxH.canvas.width,ctxH.canvas.height);
+    ctxH.fillStyle='#555d75';
+    ctxH.font='14px Noto Sans JP';
+    ctxH.textAlign='center';
+    ctxH.fillText('まだ履歴がありません',ctxH.canvas.width/2,80);
+    return;
+  }
+
+  chartHistory=new Chart(ctxH,{
+    type:'line',
+    data:{labels:chartLabels,datasets:lineDatasets},
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{labels:{color:'#8a90a8',font:{size:12}}},
+        tooltip:{backgroundColor:'#1e2230',titleColor:'#e8eaf0',bodyColor:'#8a90a8',borderColor:'rgba(255,255,255,0.12)',borderWidth:1}
+      },
+      scales:{
+        x:{ticks:{color:'#8a90a8',maxTicksLimit:8,maxRotation:30},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#8a90a8'},grid:{color:'rgba(255,255,255,0.05)'},beginAtZero:true,title:{display:true,text:'所持枚数',color:'#555d75'}}
+      }
+    }
+  });
+};
+
+showLoading(false);
+</script>
+</body>
+</html>
